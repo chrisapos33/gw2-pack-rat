@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 )
-
-const baseURL = "https://api.guildwars2.com"
 
 // requiredPermissions is the exact set this tool needs — no more, no less.
 var requiredPermissions = []string{"account", "characters", "inventories", "unlocks"}
@@ -40,10 +39,31 @@ func (e *ValidationError) Error() string {
 	return strings.Join(parts, "; ")
 }
 
+// Client calls the GW2 API. Use New() for production; NewWithBaseURL() in tests.
+type Client struct {
+	baseURL string
+	http    *http.Client
+}
+
+func New() *Client {
+	return &Client{
+		baseURL: "https://api.guildwars2.com",
+		http:    &http.Client{Timeout: 10 * time.Second},
+	}
+}
+
+// NewWithBaseURL is intended for tests that spin up a local mock server.
+func NewWithBaseURL(baseURL string) *Client {
+	return &Client{
+		baseURL: baseURL,
+		http:    &http.Client{Timeout: 5 * time.Second},
+	}
+}
+
 // ValidateKey calls /v2/tokeninfo, enforces exactly the required permission set,
 // and returns the granted permissions on success.
-func ValidateKey(key string) ([]string, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/v2/tokeninfo?access_token=%s", baseURL, key))
+func (c *Client) ValidateKey(key string) ([]string, error) {
+	resp, err := c.http.Get(fmt.Sprintf("%s/v2/tokeninfo?access_token=%s", c.baseURL, key))
 	if err != nil {
 		return nil, fmt.Errorf("failed to reach GW2 API: %w", err)
 	}

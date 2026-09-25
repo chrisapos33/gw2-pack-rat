@@ -10,6 +10,7 @@ import (
 
 	"gw2packrat/internal/auth"
 	"gw2packrat/internal/db"
+	"gw2packrat/internal/gw2"
 	"gw2packrat/internal/handler"
 )
 
@@ -30,7 +31,7 @@ func main() {
 	defer pool.Close()
 
 	usersH := handler.NewUsersHandler(pool, jwtSecret)
-	apiKeysH := handler.NewAPIKeysHandler(pool, encKey)
+	apiKeysH := handler.NewAPIKeysHandler(pool, encKey, gw2.New())
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /auth/signup", usersH.Signup)

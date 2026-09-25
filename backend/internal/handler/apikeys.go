@@ -9,16 +9,21 @@ import (
 
 	"gw2packrat/internal/auth"
 	"gw2packrat/internal/crypto"
-	"gw2packrat/internal/gw2"
 )
+
+// keyValidator is satisfied by *gw2.Client; extracted for testing.
+type keyValidator interface {
+	ValidateKey(key string) ([]string, error)
+}
 
 type APIKeysHandler struct {
 	db            *pgxpool.Pool
 	encryptionKey []byte
+	gw2           keyValidator
 }
 
-func NewAPIKeysHandler(db *pgxpool.Pool, encryptionKey []byte) *APIKeysHandler {
-	return &APIKeysHandler{db: db, encryptionKey: encryptionKey}
+func NewAPIKeysHandler(db *pgxpool.Pool, encryptionKey []byte, gw2 keyValidator) *APIKeysHandler {
+	return &APIKeysHandler{db: db, encryptionKey: encryptionKey, gw2: gw2}
 }
 
 type addKeyRequest struct {
@@ -48,7 +53,7 @@ func (h *APIKeysHandler) AddKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	permissions, err := gw2.ValidateKey(req.Key)
+	permissions, err := h.gw2.ValidateKey(req.Key)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return

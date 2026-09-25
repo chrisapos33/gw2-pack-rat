@@ -69,3 +69,9 @@ func UserIDFromContext(ctx context.Context) (string, bool) {
 	id, ok := ctx.Value(userIDKey).(string)
 	return id, ok
 }
+
+// InjectUserID returns a context with the user ID set. Used in tests to
+// simulate what Middleware does without a full HTTP round-trip.
+func InjectUserID(ctx context.Context, userID string) context.Context {
+	return context.WithValue(ctx, userIDKey, userID)
+}
